@@ -1,5 +1,31 @@
-pypdf
+# Core langchain packages
 langchain
-chromadb 
+langchain-chroma
+langchain-ollama
+langchain-openai
+langchain-community
+langchain-text-splitters
+
+# Document processing
+pypdf
+
+# Vector database
+chromadb
+
+# Environment management
+python-dotenv
+
+# Testing
 pytest
+
+# OpenAI embeddings
+openai
+
+# Ollama embeddings
+ollama
+
+# AWS Bedrock embeddings
+boto3
+
+# AWS Bedrock LLMs
 boto3

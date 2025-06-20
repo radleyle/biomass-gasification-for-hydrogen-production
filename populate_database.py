@@ -20,6 +20,7 @@ def main():
         
     # create (or update) the database
     documents = load_documents()
+    print(documents[0])
     chunks = split_documents(documents)
     add_to_chroma(chunks)
     
@@ -35,6 +36,7 @@ def split_documents(documents: list[Document]):
         is_separator_regex=False,
     )
     chunks = text_splitter.split_documents(documents)
+    print(f"Split {len(documents)} documents into {len(chunks)} chunks")
     return chunks
 
 def add_to_chroma(chunks: list[Document]):
@@ -49,7 +51,7 @@ def add_to_chroma(chunks: list[Document]):
     # add or update the documents
     existing_items = db.get(include=[]) # IDs are always included by default
     existing_ids = set(existing_items["ids"])
-    print(f"Number of existing items: {len(existing_ids)}")
+    print(f"Number of existing documents in DB: {len(existing_ids)}")
     
     # only add documents that don't exist in the DB
     new_chunks = []
@@ -62,7 +64,7 @@ def add_to_chroma(chunks: list[Document]):
         new_chunk_ids = [chunk.metadata["id"] for chunk in new_chunks]
         db.add_documents(new_chunks, ids=new_chunk_ids)
     else:
-        print("No new documents to add.")
+        print("✅ No new documents to add.")
         
 def calculate_chunk_ids(chunks):
     # this will create IDs like "data/testing/scw/1.pdf:6:2"
