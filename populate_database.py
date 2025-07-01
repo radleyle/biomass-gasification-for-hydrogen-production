@@ -8,24 +8,29 @@ from get_embedding_function import get_embedding_function
 from langchain_chroma import Chroma
 
 CHROMA_PATH = "chroma"
-DATA_PATH = "data/raw/testing/scw"
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--reset", action="store_true", help="Reset the database.")
+    parser.add_argument("--data-path", type=str, required=True, help="Path to the directory containing PDF files.")
     args = parser.parse_args()
     if args.reset:
         print("Resetting the database...")
         clear_database()
         
     # create (or update) the database
-    documents = load_documents()
-    print(documents[0])
-    chunks = split_documents(documents)
-    add_to_chroma(chunks)
+    documents = load_documents(args.data_path)
+    print(f"Loaded {len(documents)} documents from {args.data_path}")
+    if documents:
+        print(f"Sample document: {documents[0].metadata}")
+        chunks = split_documents(documents)
+        add_to_chroma(chunks)
+    else:
+        print("No documents found in the specified path.")
     
-def load_documents():
-    document_loader = PyPDFDirectoryLoader(DATA_PATH)
+def load_documents(data_path):
+    print(f"Loading documents from: {data_path}")
+    document_loader = PyPDFDirectoryLoader(data_path)
     return document_loader.load()
 
 def split_documents(documents: list[Document]):
