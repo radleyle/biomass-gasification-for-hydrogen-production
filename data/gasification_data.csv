@@ -1,0 +1,17 @@
+technology,temperature_C,reaction_time_min,pressure_bar,feedstock_type,agent_ratio,H2_yield_mol_kg,CO_yield_mol_kg,CO2_yield_mol_kg,CH4_yield_mol_kg,carbon_efficiency_pct,energy_input_kW,reactor_type,study_reference
+co2,700,30,,biomass,,7.89,5.98,,,47.26,,supercritical,this_study_700C
+co2,750,30,,biomass,,9.37,7.05,,,60.32,,supercritical,this_study_750C
+co2,800,30,,biomass,,13.56,8.34,,,71.18,,supercritical,this_study_800C
+co2,850,30,,biomass,,5.13,12.45,,,86.57,,supercritical,this_study_850C
+co2,900,30,,biomass,,16.85,17.65,,,94.53,,supercritical,this_study_900C
+steam,850,30,1.58,bagasse,0.4,9.0,7.5,,,19.77,,fluidized_bed,tavasoli_2015
+plasma,,,,wood_pellets,0.97,48.31,,,,48.83,71,plasma_torch,study_2023
+scw,400,30,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_400C
+scw,400,60,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_400C
+scw,400,90,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_400C
+scw,450,30,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_450C
+scw,450,60,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_450C
+scw,450,90,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_450C
+scw,500,30,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_500C
+scw,500,60,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_500C
+scw,500,90,,food_waste,,2.4,0.3,4.7,1.7,37.1,,batch_reactor,thanikodi_500C 

@@ -19,6 +19,10 @@ biomass-gasification-for-hydrogen-production/
 ├── data/                      # Input data and reference datasets
 │   ├── docling_md/           # Processed markdown documents
 │   ├── raw/                  # Original PDF research papers
+│   │   ├── co2/              # CO₂ gasification papers (3 papers)
+│   │   ├── steam/            # Steam gasification papers (5 papers)
+│   │   ├── plasma/           # Plasma gasification papers (3 papers)
+│   │   └── scw/              # Supercritical water gasification papers (4 papers)
 │   └── LCA/                  # LCA results and data
 ├── models/                    # LCA models and configurations
 │   └── rag_pipeline.ipynb    # RAG system development notebook
@@ -32,6 +36,19 @@ biomass-gasification-for-hydrogen-production/
 ├── create_database.py        # Database creation script
 └── requirements.txt          # Python dependencies
 ```
+
+## Available Research Data
+
+The project includes curated research papers for four biomass gasification technologies:
+
+| Technology | Directory | Papers | Focus Areas |
+|------------|-----------|--------|-------------|
+| **CO₂ Gasification** | `data/raw/co2/` | 3 papers | Carbon dioxide as gasifying agent, temperature ranges 700-900°C |
+| **Steam Gasification** | `data/raw/steam/` | 5 papers | Steam reforming, hydrogen yield optimization, reactor designs |
+| **Plasma Gasification** | `data/raw/plasma/` | 3 papers | Thermal plasma processes, syngas production, high-temperature reactions |
+| **Supercritical Water** | `data/raw/scw/` | 4 papers | SCWG processes, supercritical conditions, reactor performance |
+
+Each directory contains peer-reviewed research papers in PDF format that can be loaded into the RAG system for analysis and comparison.
 
 ## Installation
 
@@ -77,8 +94,20 @@ biomass-gasification-for-hydrogen-production/
 # Create the initial database structure
 python create_database.py
 
-# Populate with documents from data/docling_md/
-python populate_database.py
+# Populate with documents from specific technology directories
+# Available directories: co2, steam, plasma, scw
+python populate_database.py --data-path "data/raw/co2"      # Load CO₂ gasification papers
+python populate_database.py --data-path "data/raw/steam"    # Load steam gasification papers  
+python populate_database.py --data-path "data/raw/plasma"   # Load plasma gasification papers
+python populate_database.py --data-path "data/raw/scw"      # Load supercritical water papers
+
+# Reset database and load fresh data
+python populate_database.py --reset --data-path "data/raw/co2"
+
+# Load multiple technologies by running multiple commands
+python populate_database.py --data-path "data/raw/co2"
+python populate_database.py --data-path "data/raw/steam"
+# This will add both datasets to the same database for cross-technology queries
 ```
 
 ### 2. Querying the RAG System
@@ -147,6 +176,39 @@ jupyter notebook models/rag_pipeline.ipynb
 #### Compare embedding functions:
 ```bash
 python compare_embeddings.py
+```
+
+## Common Research Workflows
+
+### Single Technology Analysis
+```bash
+# Focus on CO₂ gasification research
+python populate_database.py --reset --data-path "data/raw/co2"
+python query_data.py "What are the typical operating temperatures for CO₂ gasification?"
+```
+
+### Technology Comparison
+```bash
+# Load multiple technologies for comparative analysis
+python populate_database.py --reset --data-path "data/raw/steam"
+python populate_database.py --data-path "data/raw/co2"
+python query_data.py "Compare hydrogen yields between steam and CO₂ gasification"
+```
+
+### Comprehensive Database
+```bash
+# Build complete database with all technologies
+python populate_database.py --reset --data-path "data/raw/co2"
+python populate_database.py --data-path "data/raw/steam"
+python populate_database.py --data-path "data/raw/plasma"
+python populate_database.py --data-path "data/raw/scw"
+python query_data.py "Which gasification technology produces the highest hydrogen yield?"
+```
+
+### Help and Options
+```bash
+# View all available options
+python populate_database.py --help
 ```
 
 ## Key Features
@@ -221,16 +283,20 @@ python -c "from query_data import query_rag; print(query_rag('What is the yield 
    # Reset database if corrupted
    rm -rf chroma/
    python create_database.py
-   python populate_database.py
+   python populate_database.py --data-path "data/raw/co2"  # Or your preferred directory
+   
+   # Alternative: Use the built-in reset flag
+   python populate_database.py --reset --data-path "data/raw/co2"
    ```
 
 ## Development
 
 ### Adding New Documents
-1. Place PDF files in `data/raw/[category]/`
-2. Convert to markdown (using docling or similar)
-3. Place markdown files in `data/docling_md/[category]/`
-4. Run `python populate_database.py` to update the database
+1. Place PDF files in `data/raw/[category]/` (where category is co2, steam, plasma, or scw)
+2. Run `python populate_database.py --data-path "data/raw/[category]"` to update the database
+   - The system will automatically load all PDF files from the specified directory
+   - Example: `python populate_database.py --data-path "data/raw/co2"`
+3. For completely new technology categories, create a new subdirectory under `data/raw/`
 
 ### Adding New Tests
 1. Edit `benchmark/test.py`
