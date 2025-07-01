@@ -20,11 +20,11 @@ class LCAResultsVisualizer:
         """Load and clean the Excel data"""
         try:
             self.df = pd.read_excel(self.excel_path)
-            print(f"✅ Loaded data with shape: {self.df.shape}")
-            print(f"📊 Impact categories: {len(self.df)}")
-            print(f"🔬 Technologies: {len(self.df.columns) - 2}")  # Excluding 'Impact categories' and 'Unit'
+            print(f"Loaded data with shape: {self.df.shape}")
+            print(f"Impact categories: {len(self.df)}")
+            print(f"Technologies: {len(self.df.columns) - 2}")  # Excluding 'Impact categories' and 'Unit'
         except Exception as e:
-            print(f"❌ Error loading Excel file: {e}")
+            print(f"Error loading Excel file: {e}")
             return
             
         # Clean column names
@@ -32,7 +32,7 @@ class LCAResultsVisualizer:
         
         # Get technology columns (excluding Impact categories and Unit)
         self.tech_columns = [col for col in self.df.columns if col not in ['Impact categories', 'Unit']]
-        print(f"🏭 Technologies found: {self.tech_columns}")
+        print(f"Technologies found: {self.tech_columns}")
         
     def create_single_pie_chart(self, impact_category, save_path=None, show_plot=True):
         """Create a pie chart for a single impact category"""
@@ -41,7 +41,7 @@ class LCAResultsVisualizer:
         row = self.df[self.df['Impact categories'] == impact_category]
         
         if row.empty:
-            print(f"❌ Impact category '{impact_category}' not found")
+            print(f"Impact category '{impact_category}' not found")
             return
             
         # Extract values and unit
@@ -57,7 +57,7 @@ class LCAResultsVisualizer:
                 tech_values.append(val)
         
         if len(tech_values) == 0:
-            print(f"⚠️ No positive values found for '{impact_category}'")
+            print(f"No positive values found for '{impact_category}'")
             return
             
         # Create the pie chart
@@ -102,7 +102,7 @@ class LCAResultsVisualizer:
         # Save if path provided
         if save_path:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"💾 Saved: {save_path}")
+            print(f"Saved: {save_path}")
             
         if show_plot:
             plt.show()
@@ -115,8 +115,8 @@ class LCAResultsVisualizer:
         # Create output directory
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
-        print(f"\n🎯 Creating pie charts for {len(self.df)} impact categories...")
-        print(f"📁 Output directory: {output_dir}")
+        print(f"\nCreating pie charts for {len(self.df)} impact categories...")
+        print(f"Output directory: {output_dir}")
         
         for index, row in self.df.iterrows():
             impact_category = row['Impact categories']
@@ -126,7 +126,7 @@ class LCAResultsVisualizer:
             filename = f"{clean_name.replace(' ', '_')}.png"
             save_path = os.path.join(output_dir, filename)
             
-            print(f"\n📊 Creating chart {index+1}/{len(self.df)}: {impact_category}")
+            print(f"\nCreating chart {index+1}/{len(self.df)}: {impact_category}")
             
             self.create_single_pie_chart(
                 impact_category=impact_category,
@@ -134,8 +134,8 @@ class LCAResultsVisualizer:
                 show_plot=show_plots
             )
             
-        print(f"\n✅ All charts created successfully!")
-        print(f"📂 Check the '{output_dir}' directory for your pie charts")
+        print(f"\nAll charts created successfully!")
+        print(f"Check the '{output_dir}' directory for your pie charts")
         
     def create_summary_comparison(self, output_dir="plots", show_plot=True):
         """Create a summary comparison showing relative performance across all categories"""
@@ -189,7 +189,7 @@ class LCAResultsVisualizer:
         
         save_path = os.path.join(output_dir, "overall_comparison.png")
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"💾 Saved summary chart: {save_path}")
+        print(f"Saved summary chart: {save_path}")
         
         if show_plot:
             plt.show()
@@ -199,18 +199,18 @@ class LCAResultsVisualizer:
     def print_data_summary(self):
         """Print a summary of the data"""
         print("\n" + "="*80)
-        print("📋 LCA RESULTS DATA SUMMARY")
+        print("LCA RESULTS DATA SUMMARY")
         print("="*80)
         
-        print(f"📊 Total Impact Categories: {len(self.df)}")
-        print(f"🏭 Technologies Compared: {len(self.tech_columns)}")
-        print(f"📁 Source File: {self.excel_path}")
+        print(f"Total Impact Categories: {len(self.df)}")
+        print(f"Technologies Compared: {len(self.tech_columns)}")
+        print(f"Source File: {self.excel_path}")
         
-        print(f"\n🔬 Technologies:")
+        print(f"\nTechnologies:")
         for i, tech in enumerate(self.tech_columns, 1):
             print(f"  {i}. {tech}")
             
-        print(f"\n🌍 Impact Categories:")
+        print(f"\nImpact Categories:")
         for i, category in enumerate(self.df['Impact categories'], 1):
             unit = self.df[self.df['Impact categories'] == category]['Unit'].values[0]
             print(f"  {i:2d}. {category} ({unit})")
@@ -227,7 +227,7 @@ def main():
     
     # Check if file exists
     if not os.path.exists(excel_file):
-        print(f"❌ Excel file not found: {excel_file}")
+        print(f"Excel file not found: {excel_file}")
         return
     
     # Create visualizer
@@ -237,7 +237,7 @@ def main():
     visualizer.print_data_summary()
     
     # Ask user what they want to do
-    print(f"\n🎯 What would you like to create?")
+    print(f"\nWhat would you like to create?")
     print(f"1. All pie charts (saved to files)")
     print(f"2. Single pie chart (interactive)")
     print(f"3. Overall comparison summary")
@@ -258,7 +258,7 @@ def main():
             category = visualizer.df['Impact categories'].iloc[idx]
             visualizer.create_single_pie_chart(category)
         except (ValueError, IndexError):
-            print("❌ Invalid selection")
+            print("Invalid selection")
             
     elif choice == "3":
         visualizer.create_summary_comparison()
@@ -269,7 +269,7 @@ def main():
         print("\n✅ All visualizations created!")
         
     else:
-        print("❌ Invalid choice")
+        print("Invalid choice")
 
 if __name__ == "__main__":
     main()
