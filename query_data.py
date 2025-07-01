@@ -3,7 +3,7 @@ from langchain_chroma import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain_openai import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 from get_embedding_function import get_embedding_function
 from dotenv import load_dotenv
 import os
@@ -75,7 +75,7 @@ def query_rag(query_text):
     print(prompt)
     
     # model = ChatOpenAI(model="gpt-4", temperature=0)
-    model = Ollama(model="mistral")
+    model = OllamaLLM(model="mistral")
     response_text = model.invoke(prompt)
     #response_text = response.content
     print(response_text)
