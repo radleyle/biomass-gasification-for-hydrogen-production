@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 import aiohttp
-from typing import List, Dict, Map
+from typing import List, Dict
 from openai import AsyncOpenAI
 from firecrawl import FirecrawlApp
 from interfaces import SearchResult, ResearchStep

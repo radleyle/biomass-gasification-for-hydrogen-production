@@ -30,3 +30,7 @@ boto3
 # AWS Bedrock LLMs
 boto3
 
+# Web research agent dependencies
+aiohttp
+firecrawl
+
