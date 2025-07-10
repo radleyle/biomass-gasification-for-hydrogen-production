@@ -30,12 +30,13 @@ REQUIREMENTS:
 1. Focus ONLY on experimental data with numerical values
 2. Prioritize data in mol/kg, mmol/g, or clearly convertible units
 3. Include experimental conditions (temperature, pressure, time)
-4. Cite specific sources for each data point
+4. SEARCH ALL CONTEXT DOCUMENTS for feedstock/biomass type information (may be in different sections)
+5. Cite specific sources for each data point
 
 OUTPUT FORMAT:
 **Experimental Data Found:**
 - Technology: [Steam/CO₂/Plasma/SCW Gasification]
-- Feedstock: [biomass type]
+- Feedstock: [SEARCH ALL DOCUMENTS - biomass type, source location if available]
 - Conditions: [temperature, pressure, time if available]
 - H₂ Yield: [value with units] (Source: [paper name])
 - CO Yield: [value with units] (Source: [paper name])
@@ -49,6 +50,8 @@ OUTPUT FORMAT:
 
 **Missing Information:**
 [What experimental details are not available]
+
+IMPORTANT: Look through ALL provided context documents for feedstock information - it may be mentioned in materials/methods sections separate from the experimental data. Common feedstocks include: rice husk, bagasse, sawdust, wood chips, agricultural residues, etc.
 
 If no relevant experimental data is found, state: "No experimental gasification data found matching the query criteria."
 """
@@ -107,6 +110,34 @@ def query_rag(query_text, verbose=False):
     response_text = model.invoke(prompt)
     response_text = response_text.content
     
+    # Check if feedstock is missing and try expanded queries
+    if "not specified" in response_text.lower() or "biomass type" in response_text.lower():
+        print("\n🔄 Feedstock not found, trying expanded queries...")
+        expanded_results = try_expanded_queries(db, query_text, verbose)
+        
+        # If expanded queries don't work, try document-level search
+        if not expanded_results or "not specified" in model.invoke(prompt_template.format(
+            context="\n\n---\n\n".join([doc.page_content for doc, _score in expanded_results]), 
+            question=query_text
+        )).content.lower():
+            print("🔍 Trying document-level search for feedstock info...")
+            additional_chunks = get_document_context(db, results, query_text)
+            if additional_chunks:
+                # Combine original results with feedstock chunks
+                combined_results = results[:8] + additional_chunks[:4]  # 8 + 4 = 12 total
+                context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in combined_results])
+                prompt = prompt_template.format(context=context_text, question=query_text)
+                response_text = model.invoke(prompt).content
+                results = combined_results
+                print("✅ Added document-level feedstock context!")
+        elif expanded_results:
+            # Use the expanded query results
+            results = expanded_results
+            context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
+            prompt = prompt_template.format(context=context_text, question=query_text)
+            response_text = model.invoke(prompt).content
+            print("✅ Found better results with expanded query!")
+    
     print("\n" + "="*50)
     print("📋 EXPERIMENTAL DATA ANALYSIS")
     print("="*50)
@@ -126,6 +157,57 @@ def query_rag(query_text, verbose=False):
     save_query_result(query_text, results, response_text, similarity_scores)
     
     return response_text
+
+def try_expanded_queries(db, original_query, verbose=False):
+    """Try expanding the query with common feedstock terms."""
+    common_feedstocks = ["rice husk", "bagasse", "sawdust", "wood chips", "corn stover", "wheat straw", "biomass"]
+    
+    best_results = None
+    best_score = 0
+    
+    for feedstock in common_feedstocks:
+        expanded_query = f"{feedstock} {original_query}"
+        results = db.similarity_search_with_relevance_scores(expanded_query, k=20)  # Increased from k=12
+        
+        if results and results[0][1] > best_score:
+            best_score = results[0][1]
+            best_results = results
+            if verbose:
+                print(f"   Trying: {expanded_query} → Score: {results[0][1]:.3f}")
+    
+    return best_results if best_score > 0.5 else None
+
+def get_document_context(db, results, query_text):
+    """Get additional chunks from the same documents to find missing feedstock info."""
+    # Get document sources from current results
+    doc_sources = set()
+    for doc, score in results[:5]:  # Top 5 results
+        source_file = doc.metadata.get('id', '').split(':')[0]
+        doc_sources.add(source_file)
+    
+    # Search for feedstock terms in the same documents
+    feedstock_terms = ["feedstock", "material", "biomass", "substrate", "raw material", "obtained from"]
+    additional_chunks = []
+    
+    for term in feedstock_terms:
+        term_results = db.similarity_search_with_relevance_scores(term, k=30)
+        for doc, score in term_results:
+            source_file = doc.metadata.get('id', '').split(':')[0]
+            if source_file in doc_sources and score > 0.3:  # Same document, decent similarity
+                additional_chunks.append((doc, score))
+    
+    # Remove duplicates and sort by score
+    seen_ids = set()
+    unique_chunks = []
+    for doc, score in additional_chunks:
+        doc_id = doc.metadata.get('id', '')
+        if doc_id not in seen_ids:
+            seen_ids.add(doc_id)
+            unique_chunks.append((doc, score))
+    
+    # Return top additional chunks
+    unique_chunks.sort(key=lambda x: x[1], reverse=True)
+    return unique_chunks[:10]
     
 def save_query_result(query_text, results, response_text, similarity_scores):
     """Save query results to a markdown file for documentation and analysis."""

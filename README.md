@@ -128,8 +128,6 @@ The project features a state-of-the-art RAG system optimized for scientific data
 
 #### PDF Document Loading (Original Method):
 ```bash
-# Create the initial database structure
-python create_database.py
 
 # Populate with PDF documents from specific technology directories
 python populate_database.py --data-path "data/raw/co2"      # Load CO₂ gasification papers
