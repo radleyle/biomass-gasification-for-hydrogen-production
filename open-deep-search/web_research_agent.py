@@ -9,7 +9,9 @@ from interfaces import SearchResult, ResearchStep
 from prompts import (
     report_type_prompts,
     SYNTHESIS_PROMPT,
+    SCIENTIFIC_SYNTHESIS_PROMPT,
     FOLLOW_UP_QUERIES_PROMPT,
+    SCIENTIFIC_FOLLOW_UP_QUERIES_PROMPT,
     REPORT_FORMATTING_REQUIREMENTS,
     RESEARCH_ASSISTANT_SYSTEM_PROMPT,
     RESEARCH_PAPER_WRITER_SYSTEM_PROMPT,
@@ -35,6 +37,38 @@ class WebResearchAgent:
         self.search_api_host = 'affordable-google-search-api.p.rapidapi.com'
         self.firecrawl = FirecrawlApp(api_key=firecrawl_api_key)
         self.model = ai_model or "gpt-4o"
+        
+        # Scientific mode settings
+        self.scientific_mode = False
+        self.research_mode = 'general'
+
+    def set_scientific_mode(self, mode: str):
+        """Set the research mode for scientific research."""
+        self.scientific_mode = True
+        self.research_mode = mode
+        print(f"🔬 Scientific mode activated: {mode}")
+        
+        # Add scientific search terms to queries
+        if mode == 'scientific':
+            print("   Targeting: Peer-reviewed papers with complete experimental sections")
+        elif mode == 'experimental':
+            print("   Targeting: Reproducible protocols and methodology validation")
+        elif mode == 'data_extraction':
+            print("   Targeting: Standardized units (mol/kg, mmol/g) and tabulated data")
+
+    def enhance_query_for_scientific_mode(self, query: str) -> str:
+        """Enhance search queries with scientific terms based on research mode."""
+        if not self.scientific_mode:
+            return query
+            
+        scientific_terms = {
+            'scientific': 'experimental data methodology peer-reviewed journal',
+            'experimental': 'methodology protocol validation reproducible',
+            'data_extraction': 'mol/kg mmol/g yield data table experimental results'
+        }
+        
+        enhancement = scientific_terms.get(self.research_mode, '')
+        return f"{query} {enhancement}".strip()
 
     async def crawl_web_content(self, urls: List[str]) -> Dict[str, str]:
         print(f"🔍 Crawling {len(urls)} URLs for content...")
@@ -55,7 +89,10 @@ class WebResearchAgent:
         return content_map
 
     async def search_web(self, query: str) -> List[SearchResult]:
-        print(f"🔎 Searching web for: \"{query}\"")
+        # Enhance query for scientific mode
+        enhanced_query = self.enhance_query_for_scientific_mode(query)
+        print(f"🔎 Searching web for: \"{enhanced_query}\"")
+        
         try:
             url = f'https://{self.search_api_host}/api/google/search'
             headers = {
@@ -64,7 +101,7 @@ class WebResearchAgent:
                 'Content-Type': 'application/x-www-form-urlencoded'
             }
             data = {
-                'query': query,
+                'query': enhanced_query,
                 'country': os.getenv('SEARCH_COUNTRY', 'us'),
                 'lang': os.getenv('SEARCH_LANG', 'en'),
                 'dateRange': os.getenv('SEARCH_DATE_RANGE', 'lastYear'),
@@ -114,14 +151,18 @@ class WebResearchAgent:
             truncated_content = self.truncate_content(content, 2000)
             content_sections.append(f"Content: {truncated_content}\n---")
         
+        # Choose synthesis prompt based on mode
+        synthesis_prompt = SCIENTIFIC_SYNTHESIS_PROMPT if self.scientific_mode else SYNTHESIS_PROMPT
+        mode_context = f" (Scientific {self.research_mode} mode)" if self.scientific_mode else ""
+        
         prompt = f"""
-            Topic: {topic}
+            Topic: {topic}{mode_context}
             Previous findings: {self.truncate_content(previous_findings, 1000)}
             
             New search results:
             {chr(10).join(content_sections)}
             
-            {SYNTHESIS_PROMPT}
+            {synthesis_prompt}
         """
 
         completion = await self.openai.chat.completions.create(
@@ -147,8 +188,12 @@ class WebResearchAgent:
             
         print('🔄 Generating follow-up queries...')
         
+        # Choose follow-up prompt based on mode
+        follow_up_prompt = SCIENTIFIC_FOLLOW_UP_QUERIES_PROMPT if self.scientific_mode else FOLLOW_UP_QUERIES_PROMPT
+        mode_context = f" (Scientific {self.research_mode} mode)" if self.scientific_mode else ""
+        
         prompt = f"""
-            Based on our research about "{topic}" and our current findings:
+            Based on our research about "{topic}"{mode_context} and our current findings:
             {self.truncate_content(current_findings, 800)}
             
             Previous queries already used: {', '.join(previous_queries)}
@@ -156,7 +201,7 @@ class WebResearchAgent:
             Generate 3 NEW, DIFFERENT search queries that explore unexplored aspects of this topic.
             Avoid repeating or closely paraphrasing previous queries.
             
-            {FOLLOW_UP_QUERIES_PROMPT}
+            {follow_up_prompt}
         """
 
         completion = await self.openai.chat.completions.create(
