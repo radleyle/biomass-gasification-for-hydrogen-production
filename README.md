@@ -1,7 +1,7 @@
 # Machine Learning-Driven Framework for Life Cycle Assessment and Optimization of Hydrogen Production Technologies
 
 ## Overview
-This project focuses on evaluating and comparing the environmental sustainability of biomass gasification technologies for hydrogen production through Life Cycle Assessment (LCA). The framework analyzes four promising gasification pathways:
+This project focuses on evaluating and comparing the environmental sustainability of biomass gasification technologies for hydrogen production through Life Cycle Assessment (LCA) and advanced Retrieval-Augmented Generation (RAG). The framework analyzes four promising gasification pathways:
 - Steam Gasification
 - Supercritical Water Gasification (SCWG)
 - Plasma Gasification
@@ -12,6 +12,7 @@ The LCA is conducted using:
 - **Software**: openLCA
 - **Database**: ecoinvent 3.7.1 cutoff unit regionalized database
 - **Data Sources**: Scholarly and institutional sources
+- **AI Enhancement**: GPT-4 powered RAG system for experimental data extraction
 
 ## Project Structure
 ```
@@ -31,8 +32,12 @@ biomass-gasification-for-hydrogen-production/
 ├── plot/                     # Visualization scripts
 │   └── LCAResultsWithWaste.py # LCA results visualization
 ├── chroma/                   # Vector database storage
-├── query_data.py             # Main RAG query interface
-├── populate_database.py      # Database population script
+├── query_results/            # Saved RAG query results and documentation
+├── open-deep-search/         # Web research agent for finding papers
+├── query_data.py             # Enhanced RAG query interface with GPT-4
+├── populate_database.py      # PDF database population script
+├── populate_database_markdown.py # Markdown database population script
+├── get_embedding_function.py # Configurable embedding models
 ├── create_database.py        # Database creation script
 └── requirements.txt          # Python dependencies
 ```
@@ -85,17 +90,48 @@ Each directory contains peer-reviewed research papers in PDF format that can be 
    ollama pull nomic-embed-text
    ```
 
+4. **Configure API Keys (Optional - for enhanced features)**
+   ```bash
+   # Create .env file for OpenAI integration
+   echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
+   echo "FIRECRAWL_API_KEY=your_firecrawl_api_key_here" >> .env
+   ```
+
+## Enhanced RAG System
+
+The project features a state-of-the-art RAG system optimized for scientific data extraction:
+
+### **Dual Model Support**
+- **Local Models**: Ollama (Mistral + nomic-embed-text) - Free, private, fast
+- **Cloud Models**: OpenAI (GPT-4 + text-embedding-3-large) - Research-grade accuracy
+
+### **Scientific Data Extraction**
+- **Structured prompts** for experimental data extraction
+- **Unit-aware parsing** (mol/kg, mmol/g, vol%, etc.)
+- **Experimental condition extraction** (temperature, pressure, time)
+- **Source reliability assessment** and quality control
+
+### **Research Documentation**
+- **Automatic saving** of all query results to markdown files
+- **Similarity score tracking** for quality assessment
+- **Complete source attribution** with chunk-level references
+- **Timestamp tracking** for research audit trails
+
+### **Web Research Integration**
+- **Open Deep Search** agent for finding unit-standardized papers
+- **Technology-specific searches** for experimental data
+- **Automated paper discovery** with consistent unit reporting
+
 ## Usage
 
 ### 1. Database Setup and Population
 
-#### Create and populate the vector database:
+#### PDF Document Loading (Original Method):
 ```bash
 # Create the initial database structure
 python create_database.py
 
-# Populate with documents from specific technology directories
-# Available directories: co2, steam, plasma, scw
+# Populate with PDF documents from specific technology directories
 python populate_database.py --data-path "data/raw/co2"      # Load CO₂ gasification papers
 python populate_database.py --data-path "data/raw/steam"    # Load steam gasification papers  
 python populate_database.py --data-path "data/raw/plasma"   # Load plasma gasification papers
@@ -103,30 +139,107 @@ python populate_database.py --data-path "data/raw/scw"      # Load supercritical
 
 # Reset database and load fresh data
 python populate_database.py --reset --data-path "data/raw/co2"
-
-# Load multiple technologies by running multiple commands
-python populate_database.py --data-path "data/raw/co2"
-python populate_database.py --data-path "data/raw/steam"
-# This will add both datasets to the same database for cross-technology queries
 ```
 
-### 2. Querying the RAG System
-
-#### Interactive query interface:
+#### Markdown Document Loading (Enhanced Method):
 ```bash
-python query_data.py
+# Load markdown documents (better for experimental data extraction)
+python populate_database_markdown.py --reset --data-path "data/docling_md/steam"
+python populate_database_markdown.py --data-path "data/docling_md/co2"
+python populate_database_markdown.py --data-path "data/docling_md/plasma"
+python populate_database_markdown.py --data-path "data/docling_md/scw"
 ```
 
-#### Programmatic usage:
+### 2. Enhanced RAG Query System
+
+#### Basic Query Interface:
+```bash
+# Clean, professional output (default)
+python query_data.py "experimental hydrogen yield mmol/g bagasse steam gasification"
+
+# Detailed debugging output
+python query_data.py "experimental hydrogen yield mmol/g bagasse steam gasification" --verbose
+```
+
+#### Query Results Features:
+- **Automatic saving** to `query_results/TIMESTAMP_query.md`
+- **Similarity score assessment** (>0.5 = high quality)
+- **Structured experimental data extraction**
+- **Source reliability evaluation**
+- **Complete research documentation**
+
+#### Example Scientific Queries:
+```bash
+# Unit-specific experimental data
+python query_data.py "Find experimental Table results showing H2 yield with numerical values in mol/kg"
+python query_data.py "steam gasification experimental yields mol/kg mmol/g biomass"
+
+# Technology comparisons
+python query_data.py "Compare hydrogen yields between steam and CO2 gasification"
+python query_data.py "gasification temperature effects hydrogen yield experimental"
+
+# Condition-specific data
+python query_data.py "gasification temperature 800 850 900 experimental yields"
+python query_data.py "catalytic gasification hydrogen yield experimental mmol/g"
+```
+
+#### Programmatic Usage:
 ```python
 from query_data import query_rag
 
-# Ask questions about the research data
-response = query_rag("What is the hydrogen yield at 500°C?")
+# Basic query
+response = query_rag("What is the hydrogen yield at 850°C?")
 print(response)
+
+# With verbose output
+response = query_rag("experimental hydrogen yield", verbose=True)
 ```
 
-### 3. Running Benchmarks and Tests
+### 3. Web Research Agent (Open Deep Search)
+
+#### Find Unit-Standardized Papers:
+```bash
+cd open-deep-search
+
+# Technology-specific searches for consistent units
+python main.py "CO2 gasification hydrogen yield mol/kg experimental results"
+python main.py "steam gasification carbon monoxide CO yield mol/kg experimental"
+python main.py "plasma gasification hydrogen yield mol/kg experimental"
+python main.py "supercritical water gasification hydrogen yield mol/kg experimental"
+```
+
+#### Research Campaign Results:
+- **Comprehensive reports** saved as markdown files
+- **Source quality assessment** from top journals
+- **Unit consistency validation** across papers
+- **Download recommendations** for database enhancement
+
+### 4. Model Configuration
+
+#### Embedding Model Selection:
+```python
+# Edit get_embedding_function.py to choose embedding model:
+
+# Option 1: OpenAI embeddings (best for scientific content)
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")  # Highest quality
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")  # Good balance
+
+# Option 2: Local Ollama embeddings (free, private)
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
+```
+
+#### LLM Model Selection:
+```python
+# In query_data.py, choose your LLM:
+
+# Option 1: GPT-4 (research-grade scientific reasoning)
+model = ChatOpenAI(model="gpt-4", temperature=0)
+
+# Option 2: Local Ollama (free, private)
+model = OllamaLLM(model="mistral")
+```
+
+### 5. Running Benchmarks and Tests
 
 #### Run all benchmark tests:
 ```bash
@@ -147,7 +260,7 @@ python -m pytest benchmark/test.py::test_hydrogen_yield_peak_temperature -v -s
 - **Error handling tests**: Malformed inputs and missing data
 - **Comparative analysis tests**: Complex multi-parameter queries
 
-### 4. LCA Results Visualization
+### 6. LCA Results Visualization
 
 #### Generate pie charts for environmental impact analysis:
 ```bash
@@ -166,7 +279,7 @@ python LCAResultsWithWaste.py
 - Summary comparison saved to `plots/overall_comparison.png`
 - High-resolution PNG files (300 DPI)
 
-### 5. Data Analysis and Development
+### 7. Data Analysis and Development
 
 #### Jupyter notebook for RAG development:
 ```bash
