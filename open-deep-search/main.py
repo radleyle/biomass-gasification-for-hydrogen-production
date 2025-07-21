@@ -33,9 +33,9 @@ async def main():
     # Enhanced argument parsing for scientific research
     parser = argparse.ArgumentParser(description='Web Research Agent for Biomass Gasification')
     parser.add_argument('topic', help='Search topic to research')
-    parser.add_argument('--mode', choices=['general', 'scientific', 'experimental', 'data_extraction'], 
-                       default='scientific', 
-                       help='Research mode: general (default web search), scientific (prioritize peer-reviewed with experimental data), experimental (focus on reproducible protocols), data_extraction (target standardized units)')
+    parser.add_argument('--mode', choices=['general', 'scientific', 'experimental', 'data_extraction', 'open_access', 'researchgate_only', 'web_of_science_only', 'accessible_only'], 
+                       default='accessible_only', 
+                       help='Research mode: general (default web search), scientific (prioritize peer-reviewed with experimental data), experimental (focus on reproducible protocols), data_extraction (target standardized units), open_access (focus on free sources), researchgate_only (ResearchGate only), web_of_science_only (Web of Science only), accessible_only (most accessible open access sources)')
     parser.add_argument('--max-steps', type=int, default=5, help='Maximum research steps')
     
     args = parser.parse_args()

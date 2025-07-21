@@ -41,6 +41,51 @@ class WebResearchAgent:
         # Scientific mode settings
         self.scientific_mode = False
         self.research_mode = 'general'
+        
+        # Open access source preferences (Web of Science prioritized)
+        self.preferred_domains = {
+            'web_of_science': [
+                'webofscience.com',
+                'clarivate.com/webofsciencegroup',
+                'apps.webofknowledge.com',
+                'sciencedirect.com/science/article',
+                'springer.com/article',
+                'wiley.com/doi',
+                'tandfonline.com',
+                'ieeexplore.ieee.org'
+            ],
+            'researchgate': [
+                'researchgate.net',
+                'rg.researchgate.net'
+            ],
+            'open_access': [
+                'researchgate.net',
+                'rg.researchgate.net',
+                'arxiv.org',
+                'pubmed.ncbi.nlm.nih.gov',
+                'doaj.org',
+                'plos.org',
+                'hindawi.com',
+                'frontiersin.org',
+                'nature.com/articles',
+                'academic.oup.com',
+                'link.springer.com/article',
+                'tandfonline.com',
+                'ieeexplore.ieee.org',
+                'journals.elsevier.com/*/open-access',
+                'mdpi.com',
+                'scirp.org',
+                'cogentoa.com'
+            ],
+            'accessible_only': [
+                'mdpi.com',
+                'plos.org',
+                'hindawi.com',
+                'frontiersin.org',
+                'scirp.org',
+                'cogentoa.com'
+            ]
+        }
 
     def set_scientific_mode(self, mode: str):
         """Set the research mode for scientific research."""
@@ -55,19 +100,36 @@ class WebResearchAgent:
             print("   Targeting: Reproducible protocols and methodology validation")
         elif mode == 'data_extraction':
             print("   Targeting: Standardized units (mol/kg, mmol/g) and tabulated data")
+        elif mode == 'open_access':
+            print("   Targeting: Open access sources (ResearchGate, Web of Science, arXiv)")
+        elif mode == 'researchgate_only':
+            print("   Targeting: ResearchGate publications only")
+        elif mode == 'web_of_science_only':
+            print("   Targeting: Web of Science publications only")
+        elif mode == 'accessible_only':
+            print("   Targeting: Most accessible open access sources (MDPI, PLOS, Hindawi, Frontiers)")
 
     def enhance_query_for_scientific_mode(self, query: str) -> str:
-        """Enhance search queries with scientific terms based on research mode."""
+        """Enhance search queries with scientific terms and domain filtering based on research mode."""
         if not self.scientific_mode:
             return query
             
         scientific_terms = {
             'scientific': 'experimental data methodology peer-reviewed journal',
             'experimental': 'methodology protocol validation reproducible',
-            'data_extraction': 'mol/kg mmol/g yield data table experimental results'
+            'data_extraction': 'mol/kg mmol/g yield data table experimental results',
+            'open_access': 'site:researchgate.net OR site:arxiv.org OR site:pubmed.ncbi.nlm.nih.gov OR "web of science" OR "peer reviewed"',
+            'researchgate_only': 'site:researchgate.net',
+            'web_of_science_only': '"web of science" OR "peer reviewed" OR "journal article"',
+            'accessible_only': 'site:mdpi.com OR site:plos.org OR site:hindawi.com OR site:frontiersin.org OR site:scirp.org OR site:cogentoa.com'
         }
         
         enhancement = scientific_terms.get(self.research_mode, '')
+        
+        # Add filetype and open access indicators
+        if self.research_mode in ['open_access', 'researchgate_only', 'web_of_science_only']:
+            enhancement += ' "open access" OR "free download" OR "full text" filetype:pdf'
+        
         return f"{query} {enhancement}".strip()
 
     async def crawl_web_content(self, urls: List[str]) -> Dict[str, str]:
@@ -77,14 +139,38 @@ class WebResearchAgent:
         for url in urls:
             try:
                 print(f"  Crawling: {url}")
-                scrape_result = self.firecrawl.scrape_url(url, params={'formats': ['markdown']})
+                
+                # Skip problematic URLs that often timeout
+                if any(problematic in url.lower() for problematic in [
+                    'researchgate.net/profile',  # Profile pages often timeout
+                    'researchgate.net/publication/.*/links',  # Link pages
+                    '.pdf',  # PDF files often timeout
+                    'download_pub',  # Download links
+                    'manuscript/.*/download'  # Manuscript downloads
+                ]):
+                    print(f"  ⏭️ Skipping potentially problematic URL: {url}")
+                    continue
+                
+                # Use shorter timeout and simpler scraping
+                scrape_result = self.firecrawl.scrape_url(
+                    url, 
+                    params={
+                        'formats': ['markdown'],
+                        'timeout': 10000  # 10 second timeout
+                    }
+                )
+                
                 if not scrape_result.get('markdown'):
                     print(f"  ❌ No content found for {url}")
                     continue
+                    
                 content_map[url] = scrape_result['markdown']
                 print(f"  ✅ Successfully crawled {url}")
+                
             except Exception as error:
                 print(f"  ❌ Error crawling {url}: {error}")
+                # Try to get at least the title and snippet from search results
+                continue
 
         return content_map
 
@@ -125,6 +211,56 @@ class WebResearchAgent:
         except Exception as error:
             print(f'❌ Search API error: {error}')
             return []
+
+    def filter_results_by_domain(self, results: List[SearchResult]) -> List[SearchResult]:
+        """Filter search results to prioritize open access sources."""
+        if not self.scientific_mode:
+            return results
+            
+        filtered_results = []
+        excluded_domains = [
+            'springer.com/chapter',  # Paid chapters only
+            'wiley.com/doi/abs',     # Abstract only
+            'jstor.org',             # Often behind paywall
+            'emerald.com'            # Often behind paywall
+        ]
+        
+        # Prioritize open access sources
+        priority_sources = []
+        regular_sources = []
+        
+        for result in results:
+            link_lower = result.link.lower()
+            
+            # Skip explicitly excluded domains
+            if any(domain in link_lower for domain in excluded_domains):
+                print(f"  ⏭️ Skipping paywall source: {result.title[:50]}...")
+                continue
+                
+            # Prioritize open access domains
+            is_priority = False
+            for domain_type, domains in self.preferred_domains.items():
+                if any(domain in link_lower for domain in domains):
+                    priority_sources.append(result)
+                    is_priority = True
+                    print(f"  🌟 Priority source ({domain_type}): {result.title[:50]}...")
+                    break
+                    
+            if not is_priority:
+                # Check for high-quality indicators in title/snippet
+                quality_indicators = ['open access', 'free', 'arxiv', 'preprint', 'full text', 'peer reviewed', 'journal', 'doi', 'researchgate']
+                if any(indicator in (result.title + ' ' + result.snippet).lower() 
+                       for indicator in quality_indicators):
+                    priority_sources.append(result)
+                    print(f"  📖 Quality indicator found: {result.title[:50]}...")
+                else:
+                    regular_sources.append(result)
+        
+        # Return prioritized results first, then regular ones
+        filtered_results = priority_sources + regular_sources
+        
+        print(f"  📊 Filtered results: {len(priority_sources)} priority, {len(regular_sources)} regular")
+        return filtered_results[:10]  # Limit to top 10 results
 
     def truncate_content(self, content: str, max_length: int = 2000) -> str:
         if len(content) <= max_length:
@@ -263,6 +399,9 @@ class WebResearchAgent:
 
             # Perform search
             results = await self.search_web(current_query)
+
+            # Filter results by domain
+            results = self.filter_results_by_domain(results)
 
             # Synthesize findings
             synthesis = await self.synthesize_results(topic, results, all_findings)
