@@ -38,98 +38,36 @@ class WebResearchAgent:
         self.firecrawl = FirecrawlApp(api_key=firecrawl_api_key)
         self.model = ai_model or "gpt-4o"
         
-        # Scientific mode settings
-        self.scientific_mode = False
-        self.research_mode = 'general'
-        
-        # Open access source preferences (Web of Science prioritized)
+        # Always use open access/preprint domains for all searches
+        self.open_access_domains = [
+            'mdpi.com',
+            'plos.org',
+            'frontiersin.org',
+            'hindawi.com',
+            'scirp.org',
+            'cogentoa.com',
+            'springeropen.com',
+            'arxiv.org',
+            'biorxiv.org',
+            'chemrxiv.org',
+            'ssrn.com',
+            'doaj.org',
+            'core.ac.uk',
+            'openaire.eu',
+            # US-based open access aggregators and repositories
+            'pubmed.ncbi.nlm.nih.gov',  # US National Library of Medicine
+            'nih.gov',                  # US National Institutes of Health
+            'osti.gov'                  # US Department of Energy
+        ]
         self.preferred_domains = {
-            'web_of_science': [
-                'webofscience.com',
-                'clarivate.com/webofsciencegroup',
-                'apps.webofknowledge.com',
-                'sciencedirect.com/science/article',
-                'springer.com/article',
-                'wiley.com/doi',
-                'tandfonline.com',
-                'ieeexplore.ieee.org'
-            ],
-            'researchgate': [
-                'researchgate.net',
-                'rg.researchgate.net'
-            ],
-            'open_access': [
-                'researchgate.net',
-                'rg.researchgate.net',
-                'arxiv.org',
-                'pubmed.ncbi.nlm.nih.gov',
-                'doaj.org',
-                'plos.org',
-                'hindawi.com',
-                'frontiersin.org',
-                'nature.com/articles',
-                'academic.oup.com',
-                'link.springer.com/article',
-                'tandfonline.com',
-                'ieeexplore.ieee.org',
-                'journals.elsevier.com/*/open-access',
-                'mdpi.com',
-                'scirp.org',
-                'cogentoa.com'
-            ],
-            'accessible_only': [
-                'mdpi.com',
-                'plos.org',
-                'hindawi.com',
-                'frontiersin.org',
-                'scirp.org',
-                'cogentoa.com'
-            ]
+            'open_access': self.open_access_domains,
+            'accessible_only': self.open_access_domains
         }
-
-    def set_scientific_mode(self, mode: str):
-        """Set the research mode for scientific research."""
-        self.scientific_mode = True
-        self.research_mode = mode
-        print(f"🔬 Scientific mode activated: {mode}")
-        
-        # Add scientific search terms to queries
-        if mode == 'scientific':
-            print("   Targeting: Peer-reviewed papers with complete experimental sections")
-        elif mode == 'experimental':
-            print("   Targeting: Reproducible protocols and methodology validation")
-        elif mode == 'data_extraction':
-            print("   Targeting: Standardized units (mol/kg, mmol/g) and tabulated data")
-        elif mode == 'open_access':
-            print("   Targeting: Open access sources (ResearchGate, Web of Science, arXiv)")
-        elif mode == 'researchgate_only':
-            print("   Targeting: ResearchGate publications only")
-        elif mode == 'web_of_science_only':
-            print("   Targeting: Web of Science publications only")
-        elif mode == 'accessible_only':
-            print("   Targeting: Most accessible open access sources (MDPI, PLOS, Hindawi, Frontiers)")
 
     def enhance_query_for_scientific_mode(self, query: str) -> str:
-        """Enhance search queries with scientific terms and domain filtering based on research mode."""
-        if not self.scientific_mode:
-            return query
-            
-        scientific_terms = {
-            'scientific': 'experimental data methodology peer-reviewed journal',
-            'experimental': 'methodology protocol validation reproducible',
-            'data_extraction': 'mol/kg mmol/g yield data table experimental results',
-            'open_access': 'site:researchgate.net OR site:arxiv.org OR site:pubmed.ncbi.nlm.nih.gov OR "web of science" OR "peer reviewed"',
-            'researchgate_only': 'site:researchgate.net',
-            'web_of_science_only': '"web of science" OR "peer reviewed" OR "journal article"',
-            'accessible_only': 'site:mdpi.com OR site:plos.org OR site:hindawi.com OR site:frontiersin.org OR site:scirp.org OR site:cogentoa.com'
-        }
-        
-        enhancement = scientific_terms.get(self.research_mode, '')
-        
-        # Add filetype and open access indicators
-        if self.research_mode in ['open_access', 'researchgate_only', 'web_of_science_only']:
-            enhancement += ' "open access" OR "free download" OR "full text" filetype:pdf'
-        
+        """Enhance search queries to always restrict to open access/preprint domains."""
+        domain_filter = " OR ".join([f"site:{d}" for d in self.open_access_domains])
+        enhancement = f'{domain_filter} "open access" OR "free full text" OR "full text" filetype:pdf'
         return f"{query} {enhancement}".strip()
 
     async def crawl_web_content(self, urls: List[str]) -> Dict[str, str]:
@@ -213,53 +151,15 @@ class WebResearchAgent:
             return []
 
     def filter_results_by_domain(self, results: List[SearchResult]) -> List[SearchResult]:
-        """Filter search results to prioritize open access sources."""
-        if not self.scientific_mode:
-            return results
-            
+        """Filter search results to strictly allow only open access/preprint sources (always, regardless of mode)."""
         filtered_results = []
-        excluded_domains = [
-            'springer.com/chapter',  # Paid chapters only
-            'wiley.com/doi/abs',     # Abstract only
-            'jstor.org',             # Often behind paywall
-            'emerald.com'            # Often behind paywall
-        ]
-        
-        # Prioritize open access sources
-        priority_sources = []
-        regular_sources = []
-        
         for result in results:
             link_lower = result.link.lower()
-            
-            # Skip explicitly excluded domains
-            if any(domain in link_lower for domain in excluded_domains):
-                print(f"  ⏭️ Skipping paywall source: {result.title[:50]}...")
-                continue
-                
-            # Prioritize open access domains
-            is_priority = False
-            for domain_type, domains in self.preferred_domains.items():
-                if any(domain in link_lower for domain in domains):
-                    priority_sources.append(result)
-                    is_priority = True
-                    print(f"  🌟 Priority source ({domain_type}): {result.title[:50]}...")
-                    break
-                    
-            if not is_priority:
-                # Check for high-quality indicators in title/snippet
-                quality_indicators = ['open access', 'free', 'arxiv', 'preprint', 'full text', 'peer reviewed', 'journal', 'doi', 'researchgate']
-                if any(indicator in (result.title + ' ' + result.snippet).lower() 
-                       for indicator in quality_indicators):
-                    priority_sources.append(result)
-                    print(f"  📖 Quality indicator found: {result.title[:50]}...")
-                else:
-                    regular_sources.append(result)
-        
-        # Return prioritized results first, then regular ones
-        filtered_results = priority_sources + regular_sources
-        
-        print(f"  📊 Filtered results: {len(priority_sources)} priority, {len(regular_sources)} regular")
+            if any(domain in link_lower for domain in self.open_access_domains):
+                filtered_results.append(result)
+            else:
+                print(f"  ⏭️ Skipping non-open-access source: {result.title[:50]}...")
+        print(f"  📊 Filtered results: {len(filtered_results)} open access/preprint sources")
         return filtered_results[:10]  # Limit to top 10 results
 
     def truncate_content(self, content: str, max_length: int = 2000) -> str:
@@ -288,8 +188,8 @@ class WebResearchAgent:
             content_sections.append(f"Content: {truncated_content}\n---")
         
         # Choose synthesis prompt based on mode
-        synthesis_prompt = SCIENTIFIC_SYNTHESIS_PROMPT if self.scientific_mode else SYNTHESIS_PROMPT
-        mode_context = f" (Scientific {self.research_mode} mode)" if self.scientific_mode else ""
+        synthesis_prompt = SCIENTIFIC_SYNTHESIS_PROMPT if False else SYNTHESIS_PROMPT # Always scientific mode for synthesis
+        mode_context = " (Scientific mode)" if False else "" # Always scientific mode for synthesis
         
         prompt = f"""
             Topic: {topic}{mode_context}
@@ -325,8 +225,8 @@ class WebResearchAgent:
         print('🔄 Generating follow-up queries...')
         
         # Choose follow-up prompt based on mode
-        follow_up_prompt = SCIENTIFIC_FOLLOW_UP_QUERIES_PROMPT if self.scientific_mode else FOLLOW_UP_QUERIES_PROMPT
-        mode_context = f" (Scientific {self.research_mode} mode)" if self.scientific_mode else ""
+        follow_up_prompt = SCIENTIFIC_FOLLOW_UP_QUERIES_PROMPT if False else FOLLOW_UP_QUERIES_PROMPT # Always scientific mode for follow-up
+        mode_context = " (Scientific mode)" if False else "" # Always scientific mode for follow-up
         
         prompt = f"""
             Based on our research about "{topic}"{mode_context} and our current findings:

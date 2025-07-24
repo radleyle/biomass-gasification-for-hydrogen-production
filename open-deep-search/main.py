@@ -5,6 +5,7 @@ import asyncio
 from pathlib import Path
 from dotenv import load_dotenv
 from web_research_agent import WebResearchAgent
+import re
 
 # Load environment variables
 # Try multiple paths for .env file
@@ -30,46 +31,58 @@ else:
     print("❌ OPENAI_API_KEY not found in environment")
 
 async def main():
-    # Enhanced argument parsing for scientific research
-    parser = argparse.ArgumentParser(description='Web Research Agent for Biomass Gasification')
+    # Simplified argument parsing: only topic and max-steps
+    parser = argparse.ArgumentParser(description='Web Research Agent for Biomass Gasification (Open Access Only)')
     parser.add_argument('topic', help='Search topic to research')
-    parser.add_argument('--mode', choices=['general', 'scientific', 'experimental', 'data_extraction', 'open_access', 'researchgate_only', 'web_of_science_only', 'accessible_only'], 
-                       default='accessible_only', 
-                       help='Research mode: general (default web search), scientific (prioritize peer-reviewed with experimental data), experimental (focus on reproducible protocols), data_extraction (target standardized units), open_access (focus on free sources), researchgate_only (ResearchGate only), web_of_science_only (Web of Science only), accessible_only (most accessible open access sources)')
     parser.add_argument('--max-steps', type=int, default=5, help='Maximum research steps')
-    
     args = parser.parse_args()
-    
-    agent = WebResearchAgent()
-    
-    # Set research mode
-    if args.mode != 'general':
-        agent.set_scientific_mode(args.mode)
-    
-    topic = args.topic
-    print(f"Starting {args.mode} research on: {topic}")
 
+    agent = WebResearchAgent()
+    topic = args.topic
+    print(f"Starting open access research on: {topic}")
     max_research_steps = args.max_steps
-    
+
     # Perform multi-turn research
     research_steps = await agent.research_topic(topic, max_research_steps)
-    
+
     # Generate final paper
-    paper = await agent.generate_report(research_steps, report_type=args.mode)
-    
+    paper = await agent.generate_report(research_steps, report_type='comprehensive')
+
     print("Saving the report to file")
-    
+
     # Save the paper to a file in research folder
     research_dir = Path('./deep_search_results')
     research_dir.mkdir(exist_ok=True)
-    
-    # Include mode in filename
-    filename = f"{args.mode}_{topic.replace(' ', '_').replace('/', '_').replace('\\', '_').strip()}.md"
+
+    # Filename does not depend on mode anymore
+    # Extract gasification technology and yield type for filename
+    topic_lower = topic.lower()
+    # List of possible gasification technologies
+    techs = [
+        'steam gasification',
+        'supercritical water gasification',
+        'plasma gasification',
+        'co2 gasification'
+    ]
+    yields = [
+        'hydrogen yield',
+        'carbon monoxide yield',
+        'co yield'
+    ]
+    tech_match = next((t for t in techs if t in topic_lower), 'other')
+    yield_match = next((y for y in yields if y in topic_lower), 'other')
+    # Remove tech and yield from topic for the rest
+    rest = topic_lower
+    rest = re.sub(re.escape(tech_match), '', rest)
+    rest = re.sub(re.escape(yield_match), '', rest)
+    rest = rest.strip().replace(' ', '_').replace('/', '_').replace('\\', '_')
+    # Build filename
+    filename = f"{tech_match.replace(' ', '_')}_{yield_match.replace(' ', '_')}_{rest}.md"
     file_path = research_dir / filename
-    
+
     with open(file_path, 'w', encoding='utf-8') as f:
         f.write(paper)
-    
+
     print("Research:")
     print(paper)
 

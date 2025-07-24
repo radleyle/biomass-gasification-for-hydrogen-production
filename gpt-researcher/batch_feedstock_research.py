@@ -21,4 +21,4 @@ for tech in technologies:
     for feedstock in feedstocks:
         query = base_query.format(tech, feedstock)
         print(f"\n=== Running research for: {tech} of {feedstock} ===\n")
-        subprocess.run(["python", "main.py", query], cwd="gpt-researcher") 
+        subprocess.run(["python", "main.py", query], cwd=".") 

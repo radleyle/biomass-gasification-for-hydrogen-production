@@ -82,15 +82,24 @@ python test_open_access.py
 Search for specific topics using open access sources:
 
 ```bash
-# Web of Science only (default)
-python main.py "steam gasification biomass hydrogen yield" --mode web_of_science_only
-
-# Open access mode (Web of Science priority)
-python main.py "supercritical water gasification temperature effect" --mode open_access
-
-# ResearchGate only
-python main.py "plasma gasification efficiency" --mode researchgate_only
+python main.py "steam gasification biomass hydrogen yield experimental data"
 ```
+
+- No `--mode` argument is needed; all searches are open access only.
+- Results are saved in `deep_search_results/` with the new filename format.
+
+### Batch Automation for Feedstocks and Technologies
+
+You can automate comprehensive literature reviews for both hydrogen and carbon monoxide yields across all your target feedstocks and technologies (5 feedstocks × 4 technologies × 2 yields = 40 queries):
+
+```bash
+python batch_feedstock_search.py
+```
+
+- This script will run 20 queries for hydrogen yield and 20 for CO yield.
+- **Queries now explicitly request units:** `(mol/kg OR mmol/g)`
+- Example query: `experimental hydrogen yield data (mol/kg OR mmol/g) from steam gasification of agricultural residues including tables or quantitative results if available`
+- All results are saved with filenames like `steam_gasification_hydrogen_yield_of_agricultural_residues_including_tables_or_quantitative_results_if_available.md`
 
 ### Train the RAG Model
 Train the system on a comprehensive dataset:
@@ -127,8 +136,10 @@ The training script processes queries in these categories:
 - `open_access_training_data/training_summary_YYYYMMDD_HHMMSS.json`
 
 ### Search Results
-- `query_results/` directory contains individual search results
-- Each file named with timestamp and query description
+- `deep_search_results/` directory contains individual search results
+- **Filenames now start with the gasification technology, then the yield type, then the rest of the query.**
+  - Example: `steam_gasification_hydrogen_yield_including_tables_or_quantitative_results_if_available.md`
+  - This makes it easy to identify the technology and yield type at a glance.
 
 ## Source Prioritization
 
@@ -141,6 +152,10 @@ The system automatically prioritizes sources in this order:
 4. **PubMed** - Free abstracts, some full texts
 5. **PLOS, Frontiers, Hindawi** - Open access journals
 6. **Nature, Science** - Open access articles only
+7. **US-based open access sources now included:**
+   - **PubMed (pubmed.ncbi.nlm.nih.gov)**
+   - **NIH (nih.gov)**
+   - **OSTI (osti.gov)**
 
 ### ⏭️ Excluded Sources (Paywalls)
 - ScienceDirect (expensive)

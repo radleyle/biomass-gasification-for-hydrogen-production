@@ -14,34 +14,6 @@ The LCA is conducted using:
 - **Data Sources**: Scholarly and institutional sources
 - **AI Enhancement**: GPT-4 powered RAG system for experimental data extraction
 
-## Project Structure
-```
-biomass-gasification-for-hydrogen-production/
-├── data/                      # Input data and reference datasets
-│   ├── docling_md/           # Processed markdown documents
-│   ├── raw/                  # Original PDF research papers
-│   │   ├── co2/              # CO₂ gasification papers (3 papers)
-│   │   ├── steam/            # Steam gasification papers (5 papers)
-│   │   ├── plasma/           # Plasma gasification papers (3 papers)
-│   │   └── scw/              # Supercritical water gasification papers (4 papers)
-│   └── LCA/                  # LCA results and data
-├── models/                    # LCA models and configurations
-│   └── rag_pipeline.ipynb    # RAG system development notebook
-├── benchmark/                 # Testing and evaluation
-│   └── test.py               # Comprehensive test suite
-├── plot/                     # Visualization scripts
-│   └── LCAResultsWithWaste.py # LCA results visualization
-├── chroma/                   # Vector database storage
-├── query_results/            # Saved RAG query results and documentation
-├── open-deep-search/         # Web research agent for finding papers
-├── query_data.py             # Enhanced RAG query interface with GPT-4
-├── populate_database.py      # PDF database population script
-├── populate_database_markdown.py # Markdown database population script
-├── get_embedding_function.py # Configurable embedding models
-├── create_database.py        # Database creation script
-└── requirements.txt          # Python dependencies
-```
-
 ## Available Research Data
 
 The project includes curated research papers for four biomass gasification technologies:
@@ -195,22 +167,33 @@ response = query_rag("experimental hydrogen yield", verbose=True)
 
 ### 3. Web Research Agent (Open Deep Search)
 
-#### Find Unit-Standardized Papers:
+#### Find Unit-Standardized Papers (Open Access Only):
+All web research is now performed using **strictly open access and preprint sources**. No paywalled content is included, and there are no modes to specify.
+
+- **US-based open access sources are now included** (PubMed, NIH, OSTI), in addition to global open access publishers and aggregators (MDPI, PLOS, Frontiers, arXiv, CORE, etc.).
+- All results are saved in `open-deep-search/deep_search_results/` with filenames in the format:
+  - `<gasification_technology>_<yield_type>_<rest_of_query>.md`
+  - Example: `steam_gasification_hydrogen_yield_including_tables_or_quantitative_results_if_available.md`
+
+#### Single Open Access Query Example:
 ```bash
 cd open-deep-search
-
-# Technology-specific searches for consistent units
-python main.py "CO2 gasification hydrogen yield mol/kg experimental results"
-python main.py "steam gasification carbon monoxide CO yield mol/kg experimental"
-python main.py "plasma gasification hydrogen yield mol/kg experimental"
-python main.py "supercritical water gasification hydrogen yield mol/kg experimental"
+python main.py "experimental hydrogen yield data (mol/kg OR mmol/g) from steam gasification of agricultural residues including tables or quantitative results if available"
 ```
 
-#### Research Campaign Results:
-- **Comprehensive reports** saved as markdown files
-- **Source quality assessment** from top journals
-- **Unit consistency validation** across papers
-- **Download recommendations** for database enhancement
+#### Batch Automation for Feedstocks and Technologies:
+You can automate comprehensive literature reviews for both hydrogen and carbon monoxide yields across all your target feedstocks and technologies (5 feedstocks × 4 technologies × 2 yields = 40 queries):
+
+```bash
+python batch_feedstock_search.py
+```
+- This script will run 20 queries for hydrogen yield and 20 for CO yield.
+- **Queries now explicitly request units:** `(mol/kg OR mmol/g)`
+- All results are saved with filenames like `steam_gasification_hydrogen_yield_of_agricultural_residues_including_tables_or_quantitative_results_if_available.md`
+
+#### Output and File Organization:
+- All web research results are saved in `open-deep-search/deep_search_results/`.
+- Filenames start with the gasification technology, then the yield type, then the rest of the query for easy identification.
 
 ### 4. Model Configuration
 
@@ -275,7 +258,6 @@ python LCAResultsWithWaste.py
 #### Output:
 - Individual pie charts saved to `plots/pie_charts/`
 - Summary comparison saved to `plots/overall_comparison.png`
-- High-resolution PNG files (300 DPI)
 
 ### 7. Data Analysis and Development
 
