@@ -120,6 +120,35 @@ python populate_database_markdown.py --data-path "data/docling_md/plasma"
 python populate_database_markdown.py --data-path "data/docling_md/scw"
 ```
 
+#### Converting PDFs to Markdown with Docling:
+Docling provides superior PDF-to-markdown conversion with better table and chart extraction:
+
+```bash
+# Install docling (if not already installed)
+pip install docling
+
+# Convert all PDFs in a directory to markdown (basic conversion)
+docling data/raw/steam --to md --output data/docling_md/steam
+
+# Convert with faster processing (skip OCR for text-based PDFs)
+docling data/raw/steam --to md --no-ocr --output data/docling_md/steam
+
+# Convert multiple technology directories
+docling data/raw/co2 --to md --no-ocr --output data/docling_md/co2
+docling data/raw/plasma --to md --no-ocr --output data/docling_md/plasma
+docling data/raw/scw --to md --no-ocr --output data/docling_md/scw
+```
+
+**When to use `--no-ocr`:**
+- ✅ Use for modern academic PDFs with selectable text (faster processing)
+- ❌ Skip for scanned documents or image-heavy PDFs that need OCR
+
+**Benefits of docling conversion:**
+- Better table structure preservation
+- Improved chart and figure handling
+- Superior text extraction for RAG analysis
+- Maintains formatting and references
+
 ### 2. Enhanced RAG Query System
 
 #### Basic Query Interface:
