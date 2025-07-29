@@ -7,6 +7,7 @@ from langchain_ollama import OllamaLLM
 from get_embedding_function import get_embedding_function
 from dotenv import load_dotenv
 import os
+import re
 from datetime import datetime
 
 # Load environment variables from .env file
@@ -56,6 +57,83 @@ IMPORTANT: Look through ALL provided context documents for feedstock information
 If no relevant experimental data is found, state: "No experimental gasification data found matching the query criteria."
 """
 
+def parse_query_components(query_text):
+    """Extract gasification method and yield type from query text."""
+    query_lower = query_text.lower()
+    
+    # Extract gasification method
+    gasification_method = "unknown_gasification"
+    if any(term in query_lower for term in ["steam", "water vapor"]):
+        gasification_method = "steam_gasification"
+    elif any(term in query_lower for term in ["co2", "carbon dioxide", "co₂"]):
+        gasification_method = "co2_gasification"
+    elif any(term in query_lower for term in ["plasma"]):
+        gasification_method = "plasma_gasification"
+    elif any(term in query_lower for term in ["supercritical", "scw", "supercritical water"]):
+        gasification_method = "scw_gasification"
+    elif any(term in query_lower for term in ["pyrolysis"]):
+        gasification_method = "pyrolysis"
+    elif any(term in query_lower for term in ["gasification"]):
+        gasification_method = "gasification"
+    
+    # Extract yield type
+    yield_type = "unknown_yield"
+    if any(term in query_lower for term in ["hydrogen", "h2", "h₂"]):
+        yield_type = "hydrogen_yield"
+    elif any(term in query_lower for term in ["carbon monoxide", "co yield", "co production"]):
+        yield_type = "carbon_monoxide_yield"
+    elif any(term in query_lower for term in ["syngas", "synthesis gas"]):
+        yield_type = "syngas_yield"
+    elif any(term in query_lower for term in ["methane", "ch4", "ch₄"]):
+        yield_type = "methane_yield"
+    elif any(term in query_lower for term in ["tar", "tar yield"]):
+        yield_type = "tar_yield"
+    elif any(term in query_lower for term in ["char", "biochar"]):
+        yield_type = "char_yield"
+    elif any(term in query_lower for term in ["gas yield", "gas production"]):
+        yield_type = "gas_yield"
+    elif any(term in query_lower for term in ["yield", "production"]):
+        yield_type = "yield"
+    
+    # Extract feedstock type if mentioned
+    feedstock_type = ""
+    feedstocks = {
+        "rice_husk": ["rice husk", "rice hull"],
+        "bagasse": ["bagasse", "sugar cane bagasse"],
+        "sawdust": ["sawdust", "wood dust"],
+        "wood": ["wood", "woody", "forest"],
+        "corn_stover": ["corn stover", "corn residue"],
+        "wheat_straw": ["wheat straw"],
+        "agricultural_residues": ["agricultural residue", "crop residue"],
+        "municipal_waste": ["municipal solid waste", "msw"],
+        "sewage_sludge": ["sewage sludge", "sludge"],
+        "algae": ["algae", "microalgae"],
+    }
+    
+    for feedstock, terms in feedstocks.items():
+        if any(term in query_lower for term in terms):
+            feedstock_type = f"_{feedstock}"
+            break
+    
+    return gasification_method, yield_type, feedstock_type
+
+def generate_filename(query_text):
+    """Generate a descriptive filename based on query components."""
+    gasification_method, yield_type, feedstock_type = parse_query_components(query_text)
+    
+    # Create base filename
+    base_name = f"{gasification_method}_{yield_type}{feedstock_type}"
+    
+    # Clean up the filename
+    base_name = re.sub(r'[^\w\-_]', '', base_name)
+    base_name = re.sub(r'_+', '_', base_name)  # Remove multiple underscores
+    base_name = base_name.strip('_')  # Remove leading/trailing underscores
+    
+    # Add timestamp for uniqueness if needed
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    return f"{base_name}_{timestamp}.md"
+
 
 def main():
     # create CLI
@@ -67,6 +145,11 @@ def main():
     query_rag(query_text, verbose=args.verbose)
     
 def query_rag(query_text, verbose=False):
+    # Similarity thresholds for different purposes
+    MAIN_THRESHOLD = 0.5              # Main query results threshold
+    FEEDSTOCK_CONTEXT_THRESHOLD = 0.3  # Additional feedstock info threshold  
+    EXPANDED_QUERY_THRESHOLD = 0.5     # Expanded query results threshold
+    
     # prepare the DB.
     embedding_function = get_embedding_function()
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
@@ -78,7 +161,7 @@ def query_rag(query_text, verbose=False):
     print(f"🔍 Query: {query_text}")
     print(f"📊 Found {len(results)} results")
     if results:
-        print(f"🎯 Best similarity score: {results[0][1]:.3f} (threshold: 0.5)")
+        print(f"🎯 Best similarity score: {results[0][1]:.3f} (threshold: {MAIN_THRESHOLD})")
         for i, (doc, score) in enumerate(results[:3]):
             source = doc.metadata.get('id', 'Unknown').split(':')[0].split('/')[-1]
             print(f"   {i+1}. {score:.3f} | {source}")
@@ -88,7 +171,7 @@ def query_rag(query_text, verbose=False):
                 preview = doc.page_content[:100].replace('\n', ' ')
                 print(f"      Preview: {preview}...")
     
-    if len(results) == 0 or results[0][1] < 0.5:
+    if len(results) == 0 or results[0][1] < MAIN_THRESHOLD:
         print("❌ Unable to find relevant results above threshold.")
         return
     
@@ -113,7 +196,7 @@ def query_rag(query_text, verbose=False):
     # Check if feedstock is missing and try expanded queries
     if "not specified" in response_text.lower() or "biomass type" in response_text.lower():
         print("\n🔄 Feedstock not found, trying expanded queries...")
-        expanded_results = try_expanded_queries(db, query_text, verbose)
+        expanded_results = try_expanded_queries(db, query_text, verbose, EXPANDED_QUERY_THRESHOLD)
         
         # If expanded queries don't work, try document-level search
         if not expanded_results or "not specified" in model.invoke(prompt_template.format(
@@ -121,7 +204,7 @@ def query_rag(query_text, verbose=False):
             question=query_text
         )).content.lower():
             print("🔍 Trying document-level search for feedstock info...")
-            additional_chunks = get_document_context(db, results, query_text)
+            additional_chunks = get_document_context(db, results, query_text, FEEDSTOCK_CONTEXT_THRESHOLD)
             if additional_chunks:
                 # Combine original results with feedstock chunks
                 combined_results = results[:8] + additional_chunks[:4]  # 8 + 4 = 12 total
@@ -158,7 +241,7 @@ def query_rag(query_text, verbose=False):
     
     return response_text
 
-def try_expanded_queries(db, original_query, verbose=False):
+def try_expanded_queries(db, original_query, verbose=False, threshold=0.5):
     """Try expanding the query with common feedstock terms."""
     common_feedstocks = ["rice husk", "bagasse", "sawdust", "wood chips", "corn stover", "wheat straw", "biomass"]
     
@@ -175,9 +258,9 @@ def try_expanded_queries(db, original_query, verbose=False):
             if verbose:
                 print(f"   Trying: {expanded_query} → Score: {results[0][1]:.3f}")
     
-    return best_results if best_score > 0.5 else None
+    return best_results if best_score > threshold else None
 
-def get_document_context(db, results, query_text):
+def get_document_context(db, results, query_text, feedstock_threshold=0.3):
     """Get additional chunks from the same documents to find missing feedstock info."""
     # Get document sources from current results
     doc_sources = set()
@@ -193,7 +276,7 @@ def get_document_context(db, results, query_text):
         term_results = db.similarity_search_with_relevance_scores(term, k=30)
         for doc, score in term_results:
             source_file = doc.metadata.get('id', '').split(':')[0]
-            if source_file in doc_sources and score > 0.3:  # Same document, decent similarity
+            if source_file in doc_sources and score > feedstock_threshold:  # Same document, decent similarity
                 additional_chunks.append((doc, score))
     
     # Remove duplicates and sort by score
@@ -215,10 +298,8 @@ def save_query_result(query_text, results, response_text, similarity_scores):
     # Create results directory if it doesn't exist
     os.makedirs(RESULTS_PATH, exist_ok=True)
     
-    # Generate filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_query = query_text.replace(' ', '_').replace('/', '_').replace('\\', '_')[:50]
-    filename = f"{timestamp}_{safe_query}.md"
+    # Generate descriptive filename based on query components
+    filename = generate_filename(query_text)
     filepath = os.path.join(RESULTS_PATH, filename)
     
     # Create markdown content
