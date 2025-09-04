@@ -146,7 +146,7 @@ def main():
     
 def query_rag(query_text, verbose=False):
     # Similarity thresholds for different purposes
-    MAIN_THRESHOLD = 0.5              # Main query results threshold
+    MAIN_THRESHOLD = 0.4              # Main query results threshold
     FEEDSTOCK_CONTEXT_THRESHOLD = 0.3  # Additional feedstock info threshold  
     EXPANDED_QUERY_THRESHOLD = 0.5     # Expanded query results threshold
     
