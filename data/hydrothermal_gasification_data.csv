@@ -1,0 +1,3 @@
+Technology,Feedstock,Temperature_C,Temperature_K,Pressure_bar,Pressure_MPa,Reaction_Time_min,H2_Yield_mol_kg,H2_Yield_mmol_g,H2_Yield_percent,CO_Yield_mol_kg,CO_Yield_mmol_g,CO_Yield_percent,CO2_Yield_mol_kg,CO2_Yield_mmol_g,CH4_Yield_mol_kg,CH4_Yield_mmol_g,Total_Gas_Yield_mol_kg,Total_Gas_Yield_mmol_g,Total_Gas_Yield_Nm3_kg,Carbon_Conversion_Efficiency_percent,Energy_Conversion_Efficiency_percent,Catalyst,Additional_Conditions,Source_File,Notes
+Hydrothermal Gasification,Xylose,600,,21,,60.0,18.0,,,,,,,,,,,,,,,10% w/w K2CO3,SCWG conditions,co2_gasification_hydrogen_yield_20250728_172758.md,With K2CO3 catalyst
+Hydrothermal Gasification,Xylose,600,,21,,60.0,15.0,,,,,,,,,,,,,,,No catalyst,SCWG conditions,co2_gasification_hydrogen_yield_20250728_172758.md,Without catalyst

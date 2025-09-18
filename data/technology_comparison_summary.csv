@@ -1,0 +1,6 @@
+Technology,Experiments,H2_Data_Points,H2_Min,H2_Max,H2_Mean,CO_Data_Points,CO_Min,CO_Max,CO_Mean,Temp_Min,Temp_Max,Temp_Mean,Press_Min,Press_Max,Press_Mean,Time_Min,Time_Max,Time_Mean,Feedstock_Count,Main_Feedstocks,Catalyst_Types,Main_Catalysts
+CO2 Gasification,2,2,6.55,16.32,11.44,2,6.3,17.2,11.75,,,,,,,,,,1,Biomass (unspecified),2,"Equivalent ratio 1, Equivalent ratio 0"
+SCWG,7,6,1.23,19.41,14.23,3,10.65,17.2,15.02,505.0,1000.0,700.97,21.0,250.0,150.4,60.0,60.0,60.0,4,"Biomass (unspecified), Glucose, Energy Sugarcane biomass",6,"Catalyst added, No catalyst"
+Hydrothermal Gasification,2,2,15.0,18.0,16.5,0,,,,600.0,600.0,600.0,21.0,21.0,21.0,60.0,60.0,60.0,1,Xylose,2,"10% w/w K2CO3, No catalyst"
+Plasma Gasification,3,0,,,,1,48.31,48.31,48.31,,,,,,,,,,2,"Biomass, FFP2 plastic feedstock",1,Not specified
+Steam Gasification,12,8,7.5,61.2,30.16,4,0.85,0.96,0.88,600.0,1000.0,809.09,21.0,220.0,180.2,60.0,60.0,60.0,9,"Energy Sugarcane biomass, Coffee Husk Biochar, Eucalyptus Biochar",5,"Not specified, Ni-exchanged resin char"

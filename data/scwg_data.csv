@@ -1,0 +1,8 @@
+Technology,Feedstock,Temperature_C,Temperature_K,Pressure_bar,Pressure_MPa,Reaction_Time_min,H2_Yield_mol_kg,H2_Yield_mmol_g,H2_Yield_percent,CO_Yield_mol_kg,CO_Yield_mmol_g,CO_Yield_percent,CO2_Yield_mol_kg,CO2_Yield_mmol_g,CH4_Yield_mol_kg,CH4_Yield_mmol_g,Total_Gas_Yield_mol_kg,Total_Gas_Yield_mmol_g,Total_Gas_Yield_Nm3_kg,Carbon_Conversion_Efficiency_percent,Energy_Conversion_Efficiency_percent,Catalyst,Additional_Conditions,Source_File,Notes
+SCWG,Biomass (unspecified),,,,,,19.41,,,,17.2,,,,,,,,,,,Catalyst added,Supercritical CO2 atmosphere,co2_gasification_hydrogen_yield_20250728_172758.md,26.79% increase with catalyst
+SCWG,Biomass (unspecified),,,,,,12.32,,,,10.65,,,,,,,,,,,No catalyst,Supercritical CO2 atmosphere,co2_gasification_hydrogen_yield_20250728_172758.md,Without catalyst baseline
+SCWG,Glucose,,873-1273,220-260,,,19.41,,,,17.2,,,,,,,,,,,Catalyst,Temperature range study,scw_gasification_carbon_monoxide_yield_20250729_210014.md,With catalyst addition
+SCWG,Energy Sugarcane biomass,,1273.15,220,,,1.23,,,,,,,,,,,,,,,Not specified,69% biomass fed,scw_gasification_hydrogen_yield_20250729_182551.md,Moles H2 produced
+SCWG,Glucose,450-560,,,25.0,,,,,,,,,,,,,,,,,0.1 wt% KOH,Feed 0.25-2 wt%,scw_gasification_hydrogen_yield_20250729_182551.md,H2 efficiency 112.74%
+SCWG,Xylose,600,,21,,60.0,18.0,,,,,,,,,,,,,,,10% w/w K2CO3,SCWG conditions,scw_gasification_hydrogen_yield_20250729_182551.md,With catalyst
+SCWG,Xylose,600,,21,,60.0,15.0,,,,,,,,,,,,,,,No catalyst,SCWG conditions,scw_gasification_hydrogen_yield_20250729_182551.md,Without catalyst

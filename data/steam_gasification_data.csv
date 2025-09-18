@@ -1,0 +1,13 @@
+Technology,Feedstock,Temperature_C,Temperature_K,Pressure_bar,Pressure_MPa,Reaction_Time_min,H2_Yield_mol_kg,H2_Yield_mmol_g,H2_Yield_percent,CO_Yield_mol_kg,CO_Yield_mmol_g,CO_Yield_percent,CO2_Yield_mol_kg,CO2_Yield_mmol_g,CH4_Yield_mol_kg,CH4_Yield_mmol_g,Total_Gas_Yield_mol_kg,Total_Gas_Yield_mmol_g,Total_Gas_Yield_Nm3_kg,Carbon_Conversion_Efficiency_percent,Energy_Conversion_Efficiency_percent,Catalyst,Additional_Conditions,Source_File,Notes
+Steam Gasification,Energy Sugarcane biomass,,1273.15,220,,,,,,,0.96,,,,,,,,,,,Not specified,69% biomass composition,steam_gasification_carbon_monoxide_yield_20250729_185436.md,Highest CO formation
+Steam Gasification,Coffee Husk Biochar,,1273.15,220,,,,,,,0.86,,,,,,,,,,,Not specified,Same conditions,steam_gasification_carbon_monoxide_yield_20250729_185436.md,Biochar feedstock
+Steam Gasification,Eucalyptus Biochar,,1273.15,220,,,,,,,0.85,,,,,,,,,,,Not specified,Same conditions,steam_gasification_carbon_monoxide_yield_20250729_185436.md,Biochar feedstock
+Steam Gasification,RDF,,1273.15,220,,,,,,,0.85,,,,,,,,,,,Not specified,Same conditions,steam_gasification_carbon_monoxide_yield_20250729_185436.md,Refuse Derived Fuel
+Steam Gasification,Bagasse,850,,,,,,,7.5,,,,,,,,,,,,,Not specified,Atmospheric pressure,steam_gasification_carbon_monoxide_yield_20250729_185436.md,mmol/g bagasse
+Steam Gasification,Corncob,650,,,,,61.2,,,,,,,,,,84.5,,,,,Not specified,Steam reforming,steam_gasification_carbon_monoxide_yield_20250729_210335.md,Total gas yield mmol/g
+Steam Gasification,Corncob,650,,,,,61.2,,,,,,,,,,84.5,,,,,Ni-exchanged resin char,Steam reforming process,steam_gasification_hydrogen_yield_20250728_172453.md,37 mmol/g more H2 than non-steam
+Steam Gasification,Waste Wood,600,,,,,10.5,,,,,,,,,,,,,,Not specified,Lower temperature,steam_gasification_hydrogen_yield_20250728_172453.md,Lower end of range,
+Steam Gasification,Waste Wood,800,,,,,27.52,,,,,,,,,,,,,,Not specified,Higher temperature,steam_gasification_hydrogen_yield_20250728_172453.md,Higher end of range,
+Steam Gasification,Xylose,600,,21,,60.0,18.0,,,,,,,,,,,,,,,10% w/w K2CO3,Hydrothermal gasification,steam_gasification_hydrogen_yield_20250728_172453.md,mol H2/kg
+Steam Gasification,Sewage Sludge,750,,,,,30.0,,,,,,,,,,,,,,,Not specified,30 min reaction time,steam_gasification_hydrogen_yield_20250728_172453.md,H2 yield not specified
+Steam Gasification,Bagasse,,,,,,,25.35,,,,,,,,,,,,,,Not specified,Steam gasification,steam_gasification_hydrogen_yield_20250728_172453.md,mmol/g yield
